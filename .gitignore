@@ -185,3 +185,9 @@ Code/__pycache__/
 *.pyc
 *.db
 .venv/
+# Old abandoned Gurux experiment
+Code/Gurux.DLMS.Net-master/
+Code/Gurux.DLMS.Python-master/
+Code/GXDLMSReader.py
+Code/__pycache__/
+Backend/__pycache__/

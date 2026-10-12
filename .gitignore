@@ -191,3 +191,7 @@ Code/Gurux.DLMS.Python-master/
 Code/GXDLMSReader.py
 Code/__pycache__/
 Backend/__pycache__/
+# Gradle build cache
+.gradle/
+build/
+local.properties

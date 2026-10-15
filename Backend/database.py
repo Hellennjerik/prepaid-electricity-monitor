@@ -53,6 +53,42 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    
+        # ---- NEW: Solar state ----
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS solar_state (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            meter_number TEXT NOT NULL,
+            battery_percent REAL DEFAULT 100.0,
+            generation_kw REAL DEFAULT 0.0,
+            load_kw REAL DEFAULT 0.5,
+            solar_kwh_today REAL DEFAULT 0.0,
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # ---- NEW: User appliances ----
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_appliances (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            meter_number TEXT NOT NULL,
+            appliance_name TEXT NOT NULL,
+            frequency TEXT NOT NULL,
+            watts REAL NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # ---- NEW: Consumption history (for predictions) ----
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS consumption_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            meter_number TEXT NOT NULL,
+            balance REAL NOT NULL,
+            kwh_used REAL NOT NULL,
+            recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
 
     conn.commit()
     conn.close()
@@ -60,3 +96,4 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
+    

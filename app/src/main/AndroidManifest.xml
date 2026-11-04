@@ -15,6 +15,14 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.Prepaidelectricitymonitor">
 
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ApplianceActivity"
+            android:exported="false" />
+
         <!-- MainActivity is no longer the starting screen -->
         <activity
             android:name=".MainActivity"
@@ -40,6 +48,8 @@
             android:name=".DashboardActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+
+        <activity android:name=".ReportsActivity" android:exported="false" />
 
     </application>
 

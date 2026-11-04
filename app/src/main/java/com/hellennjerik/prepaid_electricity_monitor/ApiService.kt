@@ -18,4 +18,22 @@ interface ApiService {
 
     @POST("apply_token")
     suspend fun applyToken(@Body request: ApplyTokenRequest): Response<SimpleResponse>
+
+    @GET("solar_status/{meter_number}")
+    suspend fun getSolarStatus(@Path("meter_number") meterNumber: String): Response<SolarStatus>
+
+    @GET("predict/{meter_number}")
+    suspend fun getPrediction(@Path("meter_number") meterNumber: String): Response<PredictionResponse>
+
+    @POST("register_appliances")
+    suspend fun registerAppliances(@Body request: RegisterAppliancesRequest): Response<SimpleResponse>
+
+    @GET("analyze_appliances/{meter_number}")
+    suspend fun analyzeAppliances(@Path("meter_number") meterNumber: String): Response<ApplianceAnalysisResponse>
+
+    @GET("history/{meter_number}")
+    suspend fun getHistory(
+        @Path("meter_number") meterNumber: String,
+        @Query("days") days: Int = 7
+    ): Response<HistoryResponse>
 }

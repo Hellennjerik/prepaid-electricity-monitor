@@ -187,9 +187,22 @@ def seed_meter(meter, cfg):
     print(f"  Done: {status['tier']} at KSh {status['rate_per_kwh']}/unit, balance KSh {status['balance']}")
 
 
+def create_demo_account():
+    """A ready-made verified login that owns all three demo meters (needs the server started with DEV_MODE=1)."""
+    res = requests.post(f"{API_URL}/dev/create_verified_user", json={
+        "full_name": "Demo User", "email": "demo@nexthome.test", "phone": "0712345678",
+        "gender": "prefer_not_to_say", "account_type": "home", "password": "demo12345",
+        "dob": "2000-01-01", "meters": list(DEMO_METERS), "nicknames": ["Solar home", "Family house", "Small flat"]})
+    if res.ok:
+        print("\nDemo login created:  demo@nexthome.test  /  demo12345   (owns M001, M002, M003)")
+    else:
+        print("\nDemo login skipped (start the server with DEV_MODE=1 to create it).")
+
+
 def seed_everything():
     for meter, cfg in DEMO_METERS.items():
         seed_meter(meter, cfg)
+    create_demo_account()
     print("\nAll meters seeded. Register users with meter numbers M001, M002 and M003 in the app.")
 
 

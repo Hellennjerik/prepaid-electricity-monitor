@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from database import get_connection, init_db
 import datetime
+import os
 import random
 import appliances_data
 
@@ -93,56 +94,10 @@ def send_low_balance_sms(balance):
 # ---------------- AUTH ENDPOINTS ----------------
 
 @app.route("/register", methods=["POST"])
-def register():
-    data = request.json
-    username = data.get("username")
-    password = data.get("password")
-    phone = data.get("phone", "")
-    meter_number = data.get("meter_number")
-
-    if not username or not password or not meter_number:
-        return jsonify({"error": "Missing fields"}), 400
-
-    conn = get_connection()
-    try:
-        conn.execute(
-            "INSERT INTO users (username, password, phone, meter_number) VALUES (?, ?, ?, ?)",
-            (username, password, phone, meter_number)
-        )
-        conn.execute(
-            "INSERT OR IGNORE INTO meters (meter_number, balance) VALUES (?, ?)",
-            (meter_number, 0.0)
-        )
-        conn.commit()
-        return jsonify({"message": "User registered successfully"}), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-    finally:
-        conn.close()
-
-
 @app.route("/login", methods=["POST"])
-def login():
-    data = request.json
-    username = data.get("username")
-    password = data.get("password")
-
-    conn = get_connection()
-    user = conn.execute(
-        "SELECT * FROM users WHERE username = ? AND password = ?",
-        (username, password)
-    ).fetchone()
-    conn.close()
-
-    if user:
-        return jsonify({
-            "message": "Login successful",
-            "user": {
-                "username": user["username"],
-                "meter_number": user["meter_number"]
-            }
-        }), 200
-    return jsonify({"error": "Invalid credentials"}), 401
+def legacy_auth_removed():
+    # The old endpoints stored passwords in plain text. Use /auth/register and /auth/login.
+    return jsonify({"error": "Moved to /auth/register and /auth/login"}), 410
 
 
 # ---------------- METER ENDPOINTS ----------------
@@ -200,8 +155,8 @@ def report_usage():
     new = conn.execute("SELECT balance, kwh_used FROM meters WHERE meter_number = ?", (meter_number,)).fetchone()
     conn.close()
 
-    if new["balance"] < LOW_BALANCE_KSH <= old["balance"]:
-        send_low_balance_sms(new["balance"])
+    # SMS alerts: "under 24 hours left" and "using more than usual" (each at most every 12 hours)
+    insights.check_and_notify(meter_number)
 
     return jsonify({
         "balance": round(new["balance"], 2),
@@ -513,6 +468,46 @@ def predict(meter_number):
     }), 200
 
 
+@app.route("/history/<meter_number>", methods=["GET"])
+def history(meter_number):
+    """
+    Daily kWh and cost for the Reports bar chart: completed days only, oldest first.
+    Optional ?days=N (default 7, max 90).
+    """
+    try:
+        days = int(request.args.get("days", 7))
+    except ValueError:
+        days = 7
+    days = max(1, min(days, TIER_WINDOW_DAYS))
+
+    conn = get_connection()
+    meter = conn.execute("SELECT 1 FROM meters WHERE meter_number = ?", (meter_number,)).fetchone()
+    if not meter:
+        conn.close()
+        return jsonify({"error": "Meter not found"}), 404
+    info = billing_info(conn, meter_number)
+    series = daily_kwh_series(conn, meter_number)[-days:]
+    conn.close()
+
+    rate = info["rate"]
+    total_kwh = sum(kwh for _, kwh in series)
+    return jsonify({
+        "meter_number": meter_number,
+        "tier": info["tier"],
+        "rate_per_kwh": rate,
+        "days": len(series),
+        "total_kwh": round(total_kwh, 2),
+        "total_cost_ksh": round(total_kwh * rate, 2),
+        "avg_kwh_per_day": round(total_kwh / len(series), 2) if series else 0,
+        "daily": [{
+            "date": day,
+            "weekday": datetime.date.fromisoformat(day).strftime("%a"),
+            "kwh": round(kwh, 2),
+            "cost_ksh": round(kwh * rate, 2),
+        } for day, kwh in series],
+    }), 200
+
+
 @app.route("/seed_history", methods=["POST"])
 def seed_history():
     data = request.get_json()
@@ -540,7 +535,17 @@ def seed_history():
     return jsonify({"message": f"Seeded {len(records)} days for {meter}"})
 
 
+# ---------------- ACCOUNTS AND INSIGHTS ----------------
+import accounts   # noqa: E402
+import insights   # noqa: E402
+
+accounts.init_account_tables()
+insights.init(billing_info, daily_kwh_series, accounts.phones_for_meter)
+app.register_blueprint(accounts.bp)
+app.register_blueprint(insights.bp)
+
+
 # ---------------- RUN ----------------
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=os.environ.get("DEBUG") == "1")

@@ -1,78 +1,88 @@
 package com.hellennjerik.prepaid_electricity_monitor
 
-import android.content.Context // <--- NEW IMPORT
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate // <--- NEW IMPORT
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 class LoginActivity : AppCompatActivity() {
-
-    private lateinit var db: AppDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ==========================================
-        // 👇 THIS IS WHERE THE THEME CODE GOES 👇
-        // ==========================================
-        // Apply the saved theme before the screen loads
-        val sharedPreferences = getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
-        val isDarkMode = sharedPreferences.getBoolean("isDarkMode", true)
-        if (isDarkMode) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-        } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        // Apply the saved light/dark theme before the screen loads
+        val isDarkMode = getSharedPreferences("AppSettings", Context.MODE_PRIVATE).getBoolean("isDarkMode", true)
+        AppCompatDelegate.setDefaultNightMode(
+            if (isDarkMode) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+        )
+
+        // Already logged in on this phone? Go straight to the dashboard.
+        if (SessionStore.isLoggedIn && SessionStore.currentMeter.isNotEmpty()) {
+            openDashboard()
+            return
         }
-        // ==========================================
 
         setContentView(R.layout.activity_login)
 
-        db = AppDatabase.getDatabase(this)
-
-        val etLoginEmail = findViewById<EditText>(R.id.etLoginEmail)
-        val etLoginPassword = findViewById<EditText>(R.id.etLoginPassword)
+        val etEmail = findViewById<TextInputEditText>(R.id.etLoginEmail)
+        val etPassword = findViewById<TextInputEditText>(R.id.etLoginPassword)
         val btnLogin = findViewById<Button>(R.id.btnLogin)
-        val btnGoToRegister = findViewById<Button>(R.id.btnGoToRegister)
 
-        // Navigate to Registration screen
-        btnGoToRegister.setOnClickListener {
+        findViewById<Button>(R.id.btnGoToRegister).setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
 
-        // Handle Login
         btnLogin.setOnClickListener {
-            val email = etLoginEmail.text.toString().trim()
-            val password = etLoginPassword.text.toString().trim()
-
+            val email = etEmail.text.toString().trim()
+            val password = etPassword.text.toString()
             if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "Please enter email and password", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+                return@setOnClickListener toast("Please enter your email and password")
             }
 
+            btnLogin.isEnabled = false
+            btnLogin.text = "Logging in..."
             lifecycleScope.launch {
-                val user = withContext(Dispatchers.IO) {
-                    // The DAO queries the database for a matching user
-                    db.userDao().login(email, password)
-                }
-
-                if (user != null) {
-                    // Login successful! Go to Dashboard.
-                    Toast.makeText(this@LoginActivity, "Welcome back, ${user.fullName}!", Toast.LENGTH_SHORT).show()
-                    startActivity(Intent(this@LoginActivity, DashboardActivity::class.java))
-                    finish() // Close login screen so user can't press back to it
-                } else {
-                    // Login failed
-                    Toast.makeText(this@LoginActivity, "Invalid email or password", Toast.LENGTH_SHORT).show()
+                try {
+                    val response = ApiClient.api.signIn(SignInRequest(email, password))
+                    val body = response.body()
+                    when {
+                        response.isSuccessful && body != null -> {
+                            SessionStore.save(body.token, body.user)
+                            toast("Welcome back, ${body.user.full_name}!")
+                            openDashboard()
+                        }
+                        response.code() == 403 && needsVerification(response.errorBody()?.string()) -> {
+                            toast("Please verify your email first")
+                            startActivity(Intent(this@LoginActivity, VerifyActivity::class.java).putExtra("EMAIL", email.lowercase()))
+                        }
+                        else -> toast(response.errorText("Could not log in"))
+                    }
+                } catch (e: Exception) {
+                    toast("Cannot reach the server. Check your internet connection.")
+                } finally {
+                    btnLogin.isEnabled = true
+                    btnLogin.text = "Log in"
                 }
             }
         }
     }
+
+    private fun needsVerification(body: String?): Boolean =
+        try { JSONObject(body ?: "").optBoolean("needs_verification") } catch (e: Exception) { false }
+
+    private fun openDashboard() {
+        val next = Intent(this, DashboardActivity::class.java)
+        next.putExtra("METER_NUMBER", SessionStore.currentMeter)
+        startActivity(next)
+        finish()
+    }
+
+    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
 }

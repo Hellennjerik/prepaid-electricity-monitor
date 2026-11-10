@@ -67,6 +67,9 @@ def init_account_tables():
             expires_at TEXT NOT NULL
         );
     """)
+    cols = [r["name"] for r in conn.execute("PRAGMA table_info(accounts)")]
+    if "alert_threshold" not in cols:
+        conn.execute("ALTER TABLE accounts ADD COLUMN alert_threshold REAL DEFAULT 100")
     conn.commit()
     conn.close()
 
@@ -95,6 +98,19 @@ def normalise_phone(raw):
     return "+" + digits if re.fullmatch(r"254[17]\d{8}", digits) else None
 
 
+def parse_threshold(raw):
+    """KSh balance at or below which the user wants an SMS alert. Empty means the default of KSh 100."""
+    if raw is None or str(raw).strip() == "":
+        return 100.0, None
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return None, "Alert level must be a number of shillings, e.g. 100"
+    if not 0 <= value <= 10000:
+        return None, "Alert level must be between KSh 0 and KSh 10,000"
+    return value, None
+
+
 def validate_profile(d, need_password=True):
     """Returns (clean_dict, error_message)."""
     name = (d.get("full_name") or "").strip()
@@ -105,6 +121,9 @@ def validate_profile(d, need_password=True):
     dob = (d.get("dob") or "").strip()
     meter = (d.get("meter_number") or "").strip().upper()
     password = d.get("password") or ""
+    threshold, terr = parse_threshold(d.get("alert_threshold"))
+    if terr:
+        return None, terr
     if len(name) < 2:
         return None, "Please enter your full name"
     if not EMAIL_RE.match(email):
@@ -127,7 +146,7 @@ def validate_profile(d, need_password=True):
     if need_password and len(password) < 8:
         return None, "Password must be at least 8 characters"
     return dict(full_name=name, email=email, phone=phone, gender=gender, account_type=account_type,
-                dob=dob or None, meter_number=meter, password=password), None
+                dob=dob or None, meter_number=meter, password=password, alert_threshold=threshold), None
 
 
 def issue_code(conn, email, name):
@@ -159,7 +178,7 @@ def current_account(conn):
         return None
     row = conn.execute(
         "SELECT a.* FROM sessions s JOIN accounts a ON a.id = s.account_id "
-        "WHERE s.token_hash = ? AND s.expires_at > ? AND a.verified = 1",
+        "WHERE s.token_hash = ? AND s.expires_at > ? AND a.verified = 1 AND COALESCE(a.disabled, 0) = 0",
         (_hash(header[7:]), _iso(_now()))).fetchone()
     return row
 
@@ -170,6 +189,7 @@ def profile(conn, acct):
     return {"id": acct["id"], "full_name": acct["full_name"], "email": acct["email"],
             "phone": acct["phone"], "dob": acct["dob"], "gender": acct["gender"],
             "account_type": acct["account_type"],
+            "alert_threshold": acct["alert_threshold"] if acct["alert_threshold"] is not None else 100.0,
             "meters": [{"meter_number": m["meter_number"], "nickname": m["nickname"]} for m in meters]}
 
 
@@ -201,16 +221,17 @@ def register():
         pw = generate_password_hash(clean["password"])
         if existing:      # signed up before but never verified: let them start again
             acct_id = existing["id"]
-            conn.execute("UPDATE accounts SET full_name=?, phone=?, dob=?, gender=?, account_type=?, password_hash=? "
-                         "WHERE id=?", (clean["full_name"], clean["phone"], clean["dob"], clean["gender"],
-                                        clean["account_type"], pw, acct_id))
+            conn.execute("UPDATE accounts SET full_name=?, phone=?, dob=?, gender=?, account_type=?, password_hash=?, "
+                         "alert_threshold=? WHERE id=?",
+                         (clean["full_name"], clean["phone"], clean["dob"], clean["gender"],
+                          clean["account_type"], pw, clean["alert_threshold"], acct_id))
             conn.execute("DELETE FROM account_meters WHERE account_id = ?", (acct_id,))
         else:
             acct_id = conn.execute(
-                "INSERT INTO accounts (full_name, email, phone, dob, gender, account_type, password_hash) "
-                "VALUES (?,?,?,?,?,?,?)",
+                "INSERT INTO accounts (full_name, email, phone, dob, gender, account_type, password_hash, alert_threshold) "
+                "VALUES (?,?,?,?,?,?,?,?)",
                 (clean["full_name"], clean["email"], clean["phone"], clean["dob"], clean["gender"],
-                 clean["account_type"], pw)).lastrowid
+                 clean["account_type"], pw, clean["alert_threshold"])).lastrowid
         link_meter(conn, acct_id, clean["meter_number"], "My home" if clean["account_type"] == "home" else "My workplace")
         conn.commit()
         code = issue_code(conn, clean["email"], clean["full_name"])
@@ -280,6 +301,8 @@ def login():
             return jsonify({"error": "Invalid email or password"}), 401
         if not acct["verified"]:
             return jsonify({"error": "Please verify your email first", "needs_verification": True}), 403
+        if acct["disabled"]:
+            return jsonify({"error": "This account has been disabled. Please contact support."}), 403
         return jsonify({"token": new_session(conn, acct["id"]), "user": profile(conn, acct)}), 200
     finally:
         conn.close()
@@ -298,7 +321,13 @@ def me():
             name = (d.get("full_name") or acct["full_name"]).strip()
             if not phone:
                 return jsonify({"error": "Enter a Kenyan phone number, e.g. 0712345678"}), 400
-            conn.execute("UPDATE accounts SET phone = ?, full_name = ? WHERE id = ?", (phone, name, acct["id"]))
+            threshold = acct["alert_threshold"] if acct["alert_threshold"] is not None else 100.0
+            if d.get("alert_threshold") is not None:
+                threshold, terr = parse_threshold(d.get("alert_threshold"))
+                if terr:
+                    return jsonify({"error": terr}), 400
+            conn.execute("UPDATE accounts SET phone = ?, full_name = ?, alert_threshold = ? WHERE id = ?",
+                         (phone, name, threshold, acct["id"]))
             conn.commit()
             acct = conn.execute("SELECT * FROM accounts WHERE id = ?", (acct["id"],)).fetchone()
         return jsonify(profile(conn, acct)), 200

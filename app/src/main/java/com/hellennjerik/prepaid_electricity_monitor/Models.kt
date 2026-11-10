@@ -1,26 +1,7 @@
 package com.hellennjerik.prepaid_electricity_monitor
 
-data class RegisterRequest(
-    val username: String,
-    val password: String,
-    val phone: String,
-    val meter_number: String
-)
-
-data class LoginRequest(
-    val username: String,
-    val password: String
-)
-
-data class LoginResponse(
-    val message: String,
-    val user: UserInfo
-)
-
-data class UserInfo(
-    val username: String,
-    val meter_number: String
-)
+// (The old RegisterRequest / LoginRequest / LoginResponse / UserInfo classes are gone:
+//  accounts now use the classes in AuthModels.kt.)
 
 data class MeterStatus(
     val meter_number: String,
@@ -28,8 +9,9 @@ data class MeterStatus(
     val kwh_used: Double,
     val status: String,
     val last_updated: String,
-    val tier: String? = null,           // <--- NEW
-    val rate_per_kwh: Double? = null    // <--- NEW
+    val tier: String? = null,
+    val rate_per_kwh: Double? = null,
+    val history_days: Int? = null
 )
 
 data class BuyTokenRequest(
@@ -65,7 +47,16 @@ data class SolarStatus(
 data class PredictionResponse(
     val meter_number: String,
     val tokens: TokenPrediction,
-    val solar: SolarPrediction
+    val solar: SolarPrediction,
+    val billing: BillingInfo? = null
+)
+
+data class BillingInfo(
+    val tier: String? = null,
+    val rate_per_kwh: Double? = null,
+    val avg_daily_kwh: Double? = null,
+    val avg_daily_spend_ksh: Double? = null,
+    val basis: String? = null
 )
 
 data class TokenPrediction(
@@ -81,7 +72,9 @@ data class SolarPrediction(
 
 data class ApplianceItem(
     val name: String,
-    val frequency: String
+    val frequency: String,
+    val watts: Double? = null,
+    val hours_per_day: Double? = null
 )
 
 data class RegisterAppliancesRequest(
@@ -91,6 +84,8 @@ data class RegisterAppliancesRequest(
 
 data class ApplianceAnalysisResponse(
     val meter_number: String,
+    val tier: String? = null,
+    val rate_per_kwh: Double? = null,
     val total_kwh_per_day: Double,
     val estimated_monthly_cost: Double,
     val breakdown: List<ApplianceBreakdown>
@@ -98,8 +93,10 @@ data class ApplianceAnalysisResponse(
 
 data class ApplianceBreakdown(
     val appliance: String,
+    val label: String? = null,
     val watts: Double,
     val frequency: String,
+    val hours_per_day: Double? = null,
     val kwh_per_day: Double,
     val ksh_per_month: Double,
     val percent: Double
@@ -121,4 +118,37 @@ data class DailyUsage(
     val weekday: String,
     val kwh: Double,
     val cost_ksh: Double
+)
+
+// ---- appliance tick-list ----
+data class CatalogItem(
+    val key: String,
+    val label: String,
+    val category: String,
+    val watts: Double,
+    val hours_per_day: Double,
+    val tip: String? = null
+)
+
+data class CatalogResponse(val appliances: List<CatalogItem>)
+data class SavedAppliancesResponse(val meter_number: String, val keys: List<String>)
+
+// ---- weather for solar homes ----
+data class WeatherDay(
+    val label: String,
+    val outlook: String,
+    val emoji: String,
+    val sunshine_hours: Double,
+    val solar: String
+)
+
+data class WeatherResponse(
+    val available: Boolean = false,
+    val days: List<WeatherDay> = emptyList(),
+    val advice: String? = null
+)
+
+data class FeedbackRequest(
+    val category: String,
+    val message: String
 )

@@ -33,6 +33,7 @@
         <activity android:name=".ApplianceActivity" android:exported="false" />
         <activity android:name=".ReportsActivity" android:exported="false" />
         <activity android:name=".ProfileActivity" android:exported="false" />
+        <activity android:name=".LearnActivity" android:exported="false" />
         <activity android:name=".MainActivity" android:exported="false" />
     </application>
 </manifest>

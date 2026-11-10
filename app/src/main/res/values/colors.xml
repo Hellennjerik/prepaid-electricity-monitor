@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Light Mode Colors -->
-    <color name="app_background">#F8FAFC</color> <!-- Light Grey/White -->
-    <color name="card_surface">#FFFFFF</color>   <!-- Pure White for Cards -->
-    <color name="text_primary">#0F172A</color>   <!-- Dark Navy Text -->
-    <color name="text_secondary">#64748B</color> <!-- Grey Text -->
+    <!-- Light mode -->
+    <color name="app_background">#F4F7FB</color>
+    <color name="card_surface">#FFFFFF</color>
+    <color name="tile_surface">#E6ECF5</color>
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#5B6B82</color>
 
-    <!-- Keep the default colors just in case -->
+    <!-- Brand colours (same in light and dark) -->
+    <color name="navy">#0B1220</color>
+    <color name="navy_header">#0F2A66</color>
+    <color name="accent_gold">#F5B301</color>
+
+    <!-- Keep the default colours just in case -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>

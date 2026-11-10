@@ -149,6 +149,38 @@
                 android:textSize="16sp" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="The number on your Kenya Power prepaid meter."
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="?attr/textInputOutlinedStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Alert me when balance falls below (KSh)">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etThreshold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:text="100"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="You will get an SMS when your credit drops to this amount. You can change it later in Profile."
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+
         <com.google.android.material.textfield.TextInputLayout
             style="?attr/textInputOutlinedStyle"
             android:layout_width="match_parent"
@@ -186,7 +218,8 @@
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="24dp"
-            android:backgroundTint="#0EA5E9"
+            android:backgroundTint="#F5B301"
+            android:textColor="#0B1220"
             android:text="Create account"
             android:textSize="16sp"
             android:textStyle="bold" />

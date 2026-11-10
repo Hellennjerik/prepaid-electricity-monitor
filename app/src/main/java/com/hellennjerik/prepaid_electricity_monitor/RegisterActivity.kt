@@ -37,6 +37,7 @@ class RegisterActivity : AppCompatActivity() {
         val etMeter = findViewById<TextInputEditText>(R.id.etMeter)
         val etPassword = findViewById<TextInputEditText>(R.id.etPassword)
         val etConfirm = findViewById<TextInputEditText>(R.id.etConfirm)
+        val etThreshold = findViewById<TextInputEditText>(R.id.etThreshold)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
 
         spGender.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, genders.map { it.first })
@@ -56,8 +57,12 @@ class RegisterActivity : AppCompatActivity() {
             val dob = etDob.text.toString().trim()
             val meter = etMeter.text.toString().trim().uppercase()
             val password = etPassword.text.toString()
+            val thresholdText = etThreshold.text.toString().trim()
+            val threshold = if (thresholdText.isEmpty()) 100.0 else thresholdText.toDoubleOrNull()
 
             when {
+                threshold == null || threshold < 0 || threshold > 10000 ->
+                    return@setOnClickListener toast("Alert level must be between KSh 0 and KSh 10,000")
                 name.isEmpty() || email.isEmpty() || phone.isEmpty() || dob.isEmpty() || meter.isEmpty() || password.isEmpty() ->
                     return@setOnClickListener toast("Please fill in every field")
                 password != etConfirm.text.toString() ->
@@ -74,7 +79,7 @@ class RegisterActivity : AppCompatActivity() {
                             full_name = name, email = email, phone = phone, dob = dob,
                             gender = genders[spGender.selectedItemPosition].second,
                             account_type = if (rbWork.isChecked) "work" else "home",
-                            meter_number = meter, password = password
+                            meter_number = meter, password = password, alert_threshold = threshold ?: 100.0
                         )
                     )
                     if (response.isSuccessful) {

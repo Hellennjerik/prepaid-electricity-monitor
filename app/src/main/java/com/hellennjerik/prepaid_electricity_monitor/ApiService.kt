@@ -43,6 +43,12 @@ interface ApiService {
     suspend fun getPrediction(@Path("meter_number") meterNumber: String): Response<PredictionResponse>
 
     // ---- appliances ----
+    @GET("appliance_catalog")
+    suspend fun getCatalog(): Response<CatalogResponse>
+
+    @GET("appliances/{meter_number}")
+    suspend fun getSavedAppliances(@Path("meter_number") meterNumber: String): Response<SavedAppliancesResponse>
+
     @POST("register_appliances")
     suspend fun registerAppliances(@Body request: RegisterAppliancesRequest): Response<SimpleResponse>
 
@@ -68,6 +74,12 @@ interface ApiService {
         @Query("amount") amount: Double
     ): Response<PlannerResponse>
 
+    @GET("weather/{meter_number}")
+    suspend fun getWeather(@Path("meter_number") meterNumber: String): Response<WeatherResponse>
+
     @GET("alerts/{meter_number}")
     suspend fun getAlerts(@Path("meter_number") meterNumber: String): Response<AlertsResponse>
+
+    @POST("feedback")
+    suspend fun sendFeedback(@Body request: FeedbackRequest): Response<SimpleResponse>
 }

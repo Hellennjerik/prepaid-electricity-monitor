@@ -1,42 +1,150 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/app_background"
-    android:padding="20dp">
+    android:background="@color/app_background">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="🔌 My Appliances"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@color/text_primary"
-        android:layout_marginBottom="8dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Select the appliances in your home to calculate your usage."
-        android:textColor="@color/text_secondary"
-        android:textSize="14sp"
-        android:layout_marginBottom="20dp" />
-
-    <CheckBox android:id="@+id/cbFridge" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Fridge (150W)" android:textColor="@color/text_primary" android:textSize="16sp" android:buttonTint="#0EA5E9"/>
-    <CheckBox android:id="@+id/cbShower" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Instant Shower (4000W)" android:textColor="@color/text_primary" android:textSize="16sp" android:buttonTint="#0EA5E9"/>
-    <CheckBox android:id="@+id/cbPasi" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Pasi / Iron (1500W)" android:textColor="@color/text_primary" android:textSize="16sp" android:buttonTint="#0EA5E9"/>
-    <CheckBox android:id="@+id/cbTV" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="TV (100W)" android:textColor="@color/text_primary" android:textSize="16sp" android:buttonTint="#0EA5E9"/>
-    <CheckBox android:id="@+id/cbMicrowave" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Microwave (1000W)" android:textColor="@color/text_primary" android:textSize="16sp" android:buttonTint="#0EA5E9"/>
-    <CheckBox android:id="@+id/cbPump" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Water Pump (750W)" android:textColor="@color/text_primary" android:textSize="16sp" android:buttonTint="#0EA5E9"/>
-
-    <Button
-        android:id="@+id/btnSaveAppliances"
+    <ScrollView
+        android:id="@+id/scrollAppliances"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_marginTop="24dp"
-        android:text="Analyze My Usage"
-        android:textStyle="bold"
-        android:backgroundTint="#10B981" />
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_nav">
 
-</LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔌 My appliances"
+                android:textColor="@color/text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvApplMeter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <!-- Result: shown after you tick appliances and tap Analyse -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/card_surface"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#F5B301"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ESTIMATED MONTHLY COST OF THESE APPLIANCES"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvResultTotal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="#F59E0B"
+                        android:textSize="28sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvResultSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp" />
+
+                    <LinearLayout
+                        android:id="@+id/resultList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/tvResultTip"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:textColor="#10B981"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:id="@+id/tvResultNote"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tick what you have at home"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="No typing needed. We use typical power and daily use for each appliance."
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:id="@+id/catalogList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <Button
+                android:id="@+id/btnSaveAppliances"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="#10B981"
+                android:textColor="#0B1220"
+                android:text="Analyse my usage"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="16dp" />
+        </LinearLayout>
+    </ScrollView>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_nav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@color/card_surface"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu" />
+</RelativeLayout>

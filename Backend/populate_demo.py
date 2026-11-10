@@ -183,6 +183,11 @@ def seed_meter(meter, cfg):
 
     check(requests.post(f"{API_URL}/register_appliances", json={
         "meter_number": meter, "appliances": appliances}), "register_appliances")
+    if meter == "M001":   # the solar home: give it a believable solar state so the Solar card works even with no simulator running
+        check(requests.post(f"{API_URL}/update_solar", json={
+            "meter_number": meter, "battery_percent": 72.0, "generation_kw": 1.4,
+            "load_kw": 0.4, "solar_kwh_today": 6.8}), "update_solar")
+        print("  Solar state set (battery 72%, producing 1.4 kW).")
     status = check(requests.get(f"{API_URL}/meter_status/{meter}"), "meter_status").json()
     print(f"  Done: {status['tier']} at KSh {status['rate_per_kwh']}/unit, balance KSh {status['balance']}")
 

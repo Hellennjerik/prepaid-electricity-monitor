@@ -1,0 +1,10 @@
+{
+	"folders": [
+		{
+			"path": "../../../../../store/OneDrive/Desktop/prepaid-electricity-monitor"
+		}
+	],
+	"settings": {
+		"python-envs.defaultEnvManager": "ms-python.python:system"
+	}
+}

@@ -24,8 +24,7 @@ import tkinter as tk
 import requests
 
 import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Backend')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Backend')))   # finds appliances_data.py if this file is in another folder
 
 import appliances_data
 
@@ -115,11 +114,11 @@ class MeterLink:
 
 
 class SmartMeterApp:
-    def __init__(self, root, meter_number):
+    def __init__(self, root, meter_number, profile):
         self.root = root
         self.meter_number = meter_number
         self.link = MeterLink(meter_number)
-        self.model = MeterModel(METERS[meter_number])
+        self.model = MeterModel(profile)
         self.lock = threading.Lock()          # guards model, pending_kwh and status
         self.pending_kwh = 0.0                # measured but not yet reported to the server
         self.status = ("Connecting...", "gray")
@@ -246,10 +245,16 @@ class SmartMeterApp:
         self.root.destroy()
 
 
+PROFILES = ("real_A", "real_B", "low_income")
+
 if __name__ == "__main__":
+    # python meter_gui.py M001                 -> demo meters use their own household pattern
+    # python meter_gui.py 54321098765          -> any other meter number (e.g. one you registered in the app)
+    # python meter_gui.py 54321098765 real_B   -> choose the household pattern for that meter
     meter = sys.argv[1] if len(sys.argv) > 1 else "M001"
-    if meter not in METERS:
-        raise SystemExit(f"Unknown meter {meter}. Choose one of: {', '.join(METERS)}")
+    profile = sys.argv[2] if len(sys.argv) > 2 else METERS.get(meter, "low_income")
+    if profile not in PROFILES:
+        raise SystemExit(f"Unknown profile {profile}. Choose one of: {', '.join(PROFILES)}")
     root = tk.Tk()
-    SmartMeterApp(root, meter)
+    SmartMeterApp(root, meter, profile)
     root.mainloop()

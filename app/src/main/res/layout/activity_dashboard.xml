@@ -6,200 +6,612 @@
     android:background="@color/app_background">
 
     <ScrollView
+        android:id="@+id/scrollMain"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/bottom_nav">
+        android:layout_above="@id/bottom_nav"
+        android:clipToPadding="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
+            android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Header: who you are, which meter, alerts -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="⚡ NextHome Energy"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:layout_marginBottom="20dp" />
+                android:background="@drawable/bg_header"
+                android:orientation="vertical"
+                android:paddingHorizontal="20dp"
+                android:paddingTop="24dp"
+                android:paddingBottom="72dp">
 
-            <!-- KPLC METER DIGITAL TWIN -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvAvatar"
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:background="@drawable/bg_avatar"
+                        android:gravity="center"
+                        android:text="H"
+                        android:textColor="#FFFFFF"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvMeterChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="12dp"
+                        android:background="@drawable/bg_chip"
+                        android:gravity="center"
+                        android:paddingHorizontal="16dp"
+                        android:text="Meter ▾"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <FrameLayout
+                        android:id="@+id/btnBell"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="Alerts"
+                            android:src="@drawable/ic_bell"
+                            app:tint="#FFFFFF" />
+
+                        <View
+                            android:id="@+id/viewBellDot"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:layout_gravity="top|end"
+                            android:layout_marginTop="10dp"
+                            android:layout_marginEnd="10dp"
+                            android:background="@drawable/bg_dot"
+                            android:visibility="gone" />
+                    </FrameLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvGreeting"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="Good evening"
+                    android:textColor="#FFFFFF"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvUpdated"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="#C7D2E4"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Hero card: the live meter (pulled up over the header) -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="10dp"
-                app:cardBackgroundColor="@color/card_surface"
-                app:strokeColor="#0EA5E9"
-                app:strokeWidth="1dp"
-                android:layout_marginBottom="16dp">
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="-52dp"
+                app:cardBackgroundColor="#0B1220"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp"
+                app:strokeColor="@color/accent_gold"
+                app:strokeWidth="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="24dp"
-                    android:gravity="center">
+                    android:padding="20dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="REMAINING UNITS"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp"
+                            android:layout_weight="1"
                             android:letterSpacing="0.1"
-                            android:layout_weight="1" />
+                            android:text="⚡ UNITS REMAINING"
+                            android:textColor="#FFFFFF"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/tvTariffBadge"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:background="#26F5B301"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="6dp"
                             android:text="--"
-                            android:textColor="#0EA5E9"
-                            android:background="#1A0EA5E9"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="4dp"
-                            android:textSize="10sp"
+                            android:textColor="@color/accent_gold"
+                            android:textSize="12sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <!-- THIS IS THE BIG UNITS TEXT -->
-                    <TextView
-                        android:id="@+id/tvUnits"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="0.0"
-                        android:textColor="#10B981"
-                        android:textSize="64sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="4dp" />
+                        android:layout_marginTop="8dp"
+                        android:baselineAligned="true"
+                        android:orientation="horizontal">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="kWh"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="14sp"
-                        android:layout_marginBottom="4dp"/>
+                        <TextView
+                            android:id="@+id/tvUnits"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0.0"
+                            android:textColor="#34D399"
+                            android:textSize="56sp"
+                            android:textStyle="bold" />
 
-                    <!-- Price per unit at this home's KPLC tier -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="kWh"
+                            android:textColor="#9AA8BD"
+                            android:textSize="18sp" />
+                    </LinearLayout>
+
                     <TextView
                         android:id="@+id/tvRate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text=""
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        android:layout_marginBottom="8dp"/>
+                        android:textColor="#9AA8BD"
+                        android:textSize="14sp" />
 
-                    <!-- Small KSh text underneath -->
-                    <TextView
-                        android:id="@+id/tvBalance"
-                        android:layout_width="wrap_content"
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="16dp"
+                        android:background="#33FFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="~ KSh 0.00"
-                        android:textColor="@color/text_primary"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.08"
+                            android:text="BALANCE"
+                            android:textColor="#9AA8BD"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvBalance"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="--"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvBalanceSub"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="in KSh"
+                            android:textColor="#9AA8BD"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.08"
+                            android:text="LASTS ABOUT"
+                            android:textColor="#9AA8BD"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvTimeLeft"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="--"
+                            android:textColor="#F5B301"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvTimeLeftSub"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="at usual use"
+                            android:textColor="#9AA8BD"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.08"
+                            android:text="USUAL USE"
+                            android:textColor="#9AA8BD"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvAvgDaily"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="--"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvAvgDailySub"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="kWh a day"
+                            android:textColor="#9AA8BD"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            <!-- Alert banner: only when there is something to warn about -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardAlert"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="#33F5B301"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+
+                <TextView
+                    android:id="@+id/tvAlert"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="24dp"
+                android:text="What would you like to do?"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- Shortcut grid -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/tileRead"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingVertical="6dp">
+
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:background="@drawable/bg_tile"
+                        android:contentDescription="Read meter"
+                        android:padding="18dp"
+                        android:src="@drawable/ic_refresh"
+                        app:tint="@color/accent_gold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="Read meter"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/tileTopUp"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingVertical="6dp">
+
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:background="@drawable/bg_tile"
+                        android:contentDescription="Top up"
+                        android:padding="18dp"
+                        android:src="@drawable/ic_wallet"
+                        app:tint="@color/accent_gold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="Top up"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/tilePlan"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingVertical="6dp">
+
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:background="@drawable/bg_tile"
+                        android:contentDescription="Will it last?"
+                        android:padding="18dp"
+                        android:src="@drawable/ic_clock"
+                        app:tint="@color/accent_gold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="Will it last?"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/tileSolar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingVertical="6dp">
+
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:background="@drawable/bg_tile"
+                        android:contentDescription="Solar"
+                        android:padding="18dp"
+                        android:src="@drawable/ic_sun"
+                        app:tint="@color/accent_gold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="Solar"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
 
-                <com.google.android.material.card.MaterialCardView
+                <LinearLayout
+                    android:id="@+id/tileAppliances"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    app:cardCornerRadius="20dp"
-                    app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/card_surface"
-                    android:layout_marginEnd="8dp">
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingVertical="6dp">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:background="@drawable/bg_tile"
+                        android:contentDescription="Appliances"
+                        android:padding="18dp"
+                        android:src="@drawable/ic_nav_power"
+                        app:tint="@color/accent_gold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="⚡ CONSUMPTION"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="10sp" />
-
-                        <TextView
-                            android:id="@+id/tvKwh"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0.0000"
-                            android:textColor="#F59E0B"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="4dp" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="kWh"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="Appliances"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/tileReports"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    app:cardCornerRadius="20dp"
-                    app:cardElevation="0dp"
-                    app:cardBackgroundColor="@color/card_surface"
-                    android:layout_marginStart="8dp">
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingVertical="6dp">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:background="@drawable/bg_tile"
+                        android:contentDescription="Reports"
+                        android:padding="18dp"
+                        android:src="@drawable/ic_nav_chart"
+                        app:tint="@color/accent_gold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="Reports"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/tileLearn"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingVertical="6dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="☀️ SOLAR / GRID"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="10sp" />
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:background="@drawable/bg_tile"
+                        android:contentDescription="Learn"
+                        android:padding="18dp"
+                        android:src="@drawable/ic_nav_info"
+                        app:tint="@color/accent_gold" />
 
-                        <TextView
-                            android:id="@+id/tvSolar"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="--"
-                            android:textColor="#10B981"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="4dp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="Learn"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/tileAlerts"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingVertical="6dp">
+
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:background="@drawable/bg_tile"
+                        android:contentDescription="Alerts"
+                        android:padding="18dp"
+                        android:src="@drawable/ic_bell"
+                        app:tint="@color/accent_gold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="Alerts"
+                        android:textColor="@color/text_primary"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
             </LinearLayout>
 
+            <!-- Solar and grid -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardSolar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="@color/card_surface"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="@color/card_surface"
-                android:layout_marginBottom="24dp">
+                app:strokeColor="@color/tile_surface"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -210,34 +622,194 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="💡 SMART PREDICTION"
+                        android:letterSpacing="0.08"
+                        android:text="☀️ SOLAR AND GRID"
                         android:textColor="@color/text_secondary"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
-
+                        android:textSize="12sp" />
 
                     <TextView
-                        android:id="@+id/tvPrediction"
+                        android:id="@+id/tvSolarSource"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Calculating..."
-                        android:textColor="#F59E0B"
+                        android:layout_marginTop="8dp"
+                        android:text="--"
+                        android:textColor="@color/text_primary"
                         android:textSize="20sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="8dp" />
+                        android:textStyle="bold" />
+
+                    <!-- Shown for grid-only homes -->
+                    <TextView
+                        android:id="@+id/tvSolarDetails"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="3dp"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="15sp" />
+
+                    <!-- Shown for solar homes -->
+                    <LinearLayout
+                        android:id="@+id/solarGroup"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="18dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="🔋 Battery"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/tvBatteryPct"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="--%"
+                                android:textColor="@color/text_primary"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <ProgressBar
+                            android:id="@+id/pbBattery"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="14dp"
+                            android:layout_marginTop="8dp"
+                            android:max="100"
+                            android:progressTint="#34D399" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="-4dp"
+                            android:layout_marginTop="18dp"
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginHorizontal="4dp"
+                                android:background="@drawable/bg_stat"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:paddingVertical="14dp">
+
+                                <TextView
+                                    android:id="@+id/tvSolarGen"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="-- kW"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="Solar power"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginHorizontal="4dp"
+                                android:background="@drawable/bg_stat"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:paddingVertical="14dp">
+
+                                <TextView
+                                    android:id="@+id/tvSolarLoad"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="-- kW"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="Home using"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginHorizontal="4dp"
+                                android:background="@drawable/bg_stat"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:paddingVertical="14dp">
+
+                                <TextView
+                                    android:id="@+id/tvSolarToday"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="-- kWh"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="Made today"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvSolarTip"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="18dp"
+                            android:lineSpacingExtra="3dp"
+                            android:textColor="#34D399"
+                            android:textSize="14sp" />
+
+                        <View
+                            android:id="@+id/viewWeatherDivider"
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="14dp"
+                            android:background="@color/tile_surface"
+                            android:visibility="gone" />
+
+                        <TextView
+                            android:id="@+id/tvSolarWeather"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:lineSpacingExtra="4dp"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp"
+                            android:visibility="gone" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            <Button
-                android:id="@+id/btnLogPurchase"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="+ Record a top-up"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:backgroundTint="#0EA5E9"
-                app:cornerRadius="16dp" />
-
         </LinearLayout>
     </ScrollView>
 
@@ -247,8 +819,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:background="@color/card_surface"
-        app:itemIconTint="@color/text_secondary"
-        app:itemTextColor="@color/text_secondary"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
-
 </RelativeLayout>

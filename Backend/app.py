@@ -120,6 +120,7 @@ def meter_status(meter_number):
     out["kwh_used"] = round(out["kwh_used"], 4)
     out["tier"] = info["tier"]                  # new: e.g. "DC2"
     out["rate_per_kwh"] = info["rate"]          # new: KSh per unit on a token
+    out["history_days"] = info["history_days"]  # how many full days of usage we have learned from
     return jsonify(out), 200
 
 
@@ -538,11 +539,14 @@ def seed_history():
 # ---------------- ACCOUNTS AND INSIGHTS ----------------
 import accounts   # noqa: E402
 import insights   # noqa: E402
+import admin      # noqa: E402
 
 accounts.init_account_tables()
 insights.init(billing_info, daily_kwh_series, accounts.phones_for_meter)
 app.register_blueprint(accounts.bp)
 app.register_blueprint(insights.bp)
+admin.init()
+app.register_blueprint(admin.bp)
 
 
 # ---------------- RUN ----------------

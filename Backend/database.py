@@ -4,7 +4,7 @@ import os
 DB_PATH = os.path.join(os.path.dirname(__file__), "kplc_meter.db")
 
 def get_connection():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -53,8 +53,7 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    
-        # ---- NEW: Solar state ----
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS solar_state (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,7 +66,6 @@ def init_db():
         )
     """)
 
-    # ---- NEW: User appliances ----
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS user_appliances (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,7 +77,6 @@ def init_db():
         )
     """)
 
-    # ---- NEW: Consumption history (for predictions) ----
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS consumption_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,4 +93,3 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
-    

@@ -72,13 +72,13 @@ r = get("/analyze_appliances/M002")
 check("appliance analysis", r.status_code == 200 and len(r.json().get("breakdown", [])) > 0)
 
 print("\n4. Does login work?")
-r = requests.post(API + "/auth/login", json={"email": "demo@nexthome.test", "password": "demo12345"}, timeout=5)
-check("demo account logs in", r.status_code == 200 and "token" in r.json(),
-      "" if r.status_code == 200 else "- run populate_demo.py with DEV_MODE=1 to create it")
-if r.status_code == 200:
-    me = get("/me", headers={"Authorization": "Bearer " + r.json()["token"]})
-    meters = [m["meter_number"] for m in me.json().get("meters", [])] if me.status_code == 200 else []
-    check("demo account owns its meters", sorted(meters) == ["M001", "M002", "M003"], f"({meters})")
+r = requests.post(API + "/auth/login", json={"identifier": "ZZZ99999", "password": "nothing-here"}, timeout=5)
+check("unknown meter or email is refused", r.status_code == 401)
+r = requests.post(API + "/auth/login", json={"identifier": "", "password": ""}, timeout=5)
+check("empty login is refused", r.status_code == 400)
+r = requests.post(API + "/auth/register", json={"full_name": "X Y", "email": "bad", "phone": "0712345678",
+                  "meter_number": "M001", "password": "longenough1"}, timeout=5)
+check("sign-up checks the email", r.status_code == 400)
 
 print("\n5. Admin console and feedback")
 v = get("/version")

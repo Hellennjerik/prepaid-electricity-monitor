@@ -46,6 +46,11 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var tvSolarToday: TextView
     private lateinit var tvSolarWeather: TextView
     private lateinit var viewWeatherDivider: View
+    private lateinit var mixSolar: View
+    private lateinit var mixBattery: View
+    private lateinit var mixGrid: View
+    private lateinit var tvMixLegend: TextView
+    private lateinit var tvMixNote: TextView
 
     private var newMeterNotice = ""      // shown while a meter has under a week of history
     private var weatherText = ""          // refreshed every 10 minutes for solar homes
@@ -80,6 +85,11 @@ class DashboardActivity : AppCompatActivity() {
         tvSolarToday = findViewById(R.id.tvSolarToday)
         tvSolarWeather = findViewById(R.id.tvSolarWeather)
         viewWeatherDivider = findViewById(R.id.viewWeatherDivider)
+        mixSolar = findViewById(R.id.mixSolar)
+        mixBattery = findViewById(R.id.mixBattery)
+        mixGrid = findViewById(R.id.mixGrid)
+        tvMixLegend = findViewById(R.id.tvMixLegend)
+        tvMixNote = findViewById(R.id.tvMixNote)
 
         // Greeting and avatar
         val firstName = SessionStore.fullName.trim().substringBefore(' ').ifEmpty { "there" }
@@ -239,6 +249,26 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
+    /** Stacked bar: how much of the home's load is met by solar, the battery and the Kenya Power grid. */
+    private fun showEnergyMix(flow: SolarFlow?) {
+        fun weight(v: View, w: Float) {
+            val p = v.layoutParams as android.widget.LinearLayout.LayoutParams
+            p.weight = w
+            v.layoutParams = p
+        }
+        if (flow == null || (flow.solar_pct + flow.battery_pct + flow.grid_pct) == 0) {
+            weight(mixSolar, 0f); weight(mixBattery, 0f); weight(mixGrid, 0f)
+            tvMixLegend.text = ""
+            tvMixNote.text = flow?.note ?: ""
+            return
+        }
+        weight(mixSolar, flow.solar_pct.toFloat())
+        weight(mixBattery, flow.battery_pct.toFloat())
+        weight(mixGrid, flow.grid_pct.toFloat())
+        tvMixLegend.text = "☀️ Solar ${flow.solar_pct}%    🔋 Battery ${flow.battery_pct}%    ⚡ Grid ${flow.grid_pct}%"
+        tvMixNote.text = flow.note
+    }
+
     private fun showWeather() {
         val show = weatherText.isNotEmpty() && solarGroup.visibility == View.VISIBLE
         tvSolarWeather.text = weatherText
@@ -277,6 +307,7 @@ class DashboardActivity : AppCompatActivity() {
         tvSolarGen.text = String.format(Locale.US, "%.1f kW", generation)
         tvSolarLoad.text = String.format(Locale.US, "%.1f kW", load)
         tvSolarToday.text = String.format(Locale.US, "%.1f kWh", madeToday)
+        showEnergyMix(solar?.flow)
         tvSolarTip.text = if (generation > 0.3) "💡 Good sun right now: a good time to iron, wash or run the water pump."
         else "💡 Low sun right now: go easy on heavy appliances to save the battery."
         showWeather()

@@ -10,13 +10,26 @@ data class SignUpRequest(
     val account_type: String,    // home | work
     val meter_number: String,
     val password: String,
-    val alert_threshold: Double = 100.0   // SMS alert when the balance falls to this many KSh
+    val alert_threshold: Double = 100.0,      // SMS alert when the balance falls to this many KSh
+    val current_balance: Double? = null,      // only asked when the meter has no usage history yet
+    val last_topup_ksh: Double? = null,
+    val last_topup_days: Int? = null
 )
 
-data class SignUpReply(val message: String? = null, val email: String? = null, val dev_code: String? = null)
+// The server answers a sign-up with a session straight away (no email code).
+data class SignUpReply(
+    val message: String? = null,
+    val token: String? = null,
+    val user: AccountProfile? = null,
+    val history_estimated: Boolean = false
+)
+
+// Kept only so old screens still compile; the server no longer uses them.
 data class VerifyRequest(val email: String, val code: String)
 data class ResendRequest(val email: String)
-data class SignInRequest(val email: String, val password: String)
+
+// Log in with the meter number OR the email, plus the password.
+data class SignInRequest(val identifier: String, val password: String)
 
 data class MeterLinkInfo(val meter_number: String, val nickname: String? = null)
 

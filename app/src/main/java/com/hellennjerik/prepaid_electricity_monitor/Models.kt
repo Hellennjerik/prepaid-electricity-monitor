@@ -41,7 +41,21 @@ data class SolarStatus(
     val battery_percent: Double,
     val generation_kw: Double,
     val load_kw: Double,
-    val solar_kwh_today: Double
+    val solar_kwh_today: Double,
+    val flow: SolarFlow? = null
+)
+
+// Where the home's power comes from right now: solar first, battery next, grid for the rest
+data class SolarFlow(
+    val mode: String,
+    val note: String,
+    val solar_kw: Double,
+    val battery_kw: Double,
+    val grid_kw: Double,
+    val spare_solar_kw: Double,
+    val solar_pct: Int,
+    val battery_pct: Int,
+    val grid_pct: Int
 )
 
 data class PredictionResponse(

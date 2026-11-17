@@ -3,6 +3,7 @@ package com.hellennjerik.prepaid_electricity_monitor
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.RadioButton
@@ -12,8 +13,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.util.Calendar
 
+/**
+ * Sign-up: name, email, phone, date of birth, gender, meter number and a password.
+ * No email code. If the meter has no usage history yet, the server asks for three answers
+ * (balance now, last top-up, days it lasted) and the screen shows those fields.
+ */
 class RegisterActivity : AppCompatActivity() {
 
     // what the user sees  ->  what the server stores
@@ -38,6 +45,10 @@ class RegisterActivity : AppCompatActivity() {
         val etPassword = findViewById<TextInputEditText>(R.id.etPassword)
         val etConfirm = findViewById<TextInputEditText>(R.id.etConfirm)
         val etThreshold = findViewById<TextInputEditText>(R.id.etThreshold)
+        val etBalance = findViewById<TextInputEditText>(R.id.etBalance)
+        val etTopup = findViewById<TextInputEditText>(R.id.etTopup)
+        val etDays = findViewById<TextInputEditText>(R.id.etDays)
+        val historyBox = findViewById<View>(R.id.historyBox)
         val btnRegister = findViewById<Button>(R.id.btnRegister)
 
         spGender.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, genders.map { it.first })
@@ -59,14 +70,20 @@ class RegisterActivity : AppCompatActivity() {
             val password = etPassword.text.toString()
             val thresholdText = etThreshold.text.toString().trim()
             val threshold = if (thresholdText.isEmpty()) 100.0 else thresholdText.toDoubleOrNull()
+            val balance = etBalance.text.toString().trim().toDoubleOrNull()
+            val topup = etTopup.text.toString().trim().toDoubleOrNull()
+            val days = etDays.text.toString().trim().toIntOrNull()
+            val askedHistory = historyBox.visibility == View.VISIBLE
 
             when {
                 threshold == null || threshold < 0 || threshold > 10000 ->
                     return@setOnClickListener toast("Alert level must be between KSh 0 and KSh 10,000")
-                name.isEmpty() || email.isEmpty() || phone.isEmpty() || dob.isEmpty() || meter.isEmpty() || password.isEmpty() ->
-                    return@setOnClickListener toast("Please fill in every field")
+                name.isEmpty() || email.isEmpty() || phone.isEmpty() || meter.isEmpty() || password.isEmpty() ->
+                    return@setOnClickListener toast("Please fill in name, email, phone, meter number and password")
                 password != etConfirm.text.toString() ->
                     return@setOnClickListener toast("The two passwords do not match")
+                askedHistory && (balance == null || topup == null || days == null || days < 1 || days > 90) ->
+                    return@setOnClickListener toast("Please answer the three usage questions (days must be 1 to 90)")
             }
 
             btnRegister.isEnabled = false
@@ -79,14 +96,26 @@ class RegisterActivity : AppCompatActivity() {
                             full_name = name, email = email, phone = phone, dob = dob,
                             gender = genders[spGender.selectedItemPosition].second,
                             account_type = if (rbWork.isChecked) "work" else "home",
-                            meter_number = meter, password = password, alert_threshold = threshold ?: 100.0
+                            meter_number = meter, password = password, alert_threshold = threshold ?: 100.0,
+                            current_balance = if (askedHistory) balance else null,
+                            last_topup_ksh = if (askedHistory) topup else null,
+                            last_topup_days = if (askedHistory) days else null
                         )
                     )
-                    if (response.isSuccessful) {
-                        val next = Intent(this@RegisterActivity, VerifyActivity::class.java)
-                        next.putExtra("EMAIL", response.body()?.email ?: email.lowercase())
-                        startActivity(next)
+                    val token = response.body()?.token
+                    val user = response.body()?.user
+                    if (response.isSuccessful && token != null && user != null) {
+                        SessionStore.save(token, user)
+                        SessionStore.currentMeter = meter
+                        toast("Welcome, ${user.full_name}!")
+                        startActivity(Intent(this@RegisterActivity, DashboardActivity::class.java)
+                            .putExtra("METER_NUMBER", meter)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
                         finish()
+                    } else if (response.code() == 422 && needsHistory(response.errorBody()?.string())) {
+                        // A brand-new meter: ask for the three history answers, then press the button again
+                        historyBox.visibility = View.VISIBLE
+                        toast("This meter is new. Please answer the three usage questions, then tap Create account again.")
                     } else {
                         toast(response.errorText("Could not create the account"))
                     }
@@ -99,6 +128,9 @@ class RegisterActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun needsHistory(body: String?): Boolean =
+        try { JSONObject(body ?: "").optBoolean("needs_history") } catch (e: Exception) { false }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
 }

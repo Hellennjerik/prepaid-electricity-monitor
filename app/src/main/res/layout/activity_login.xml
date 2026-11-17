@@ -9,6 +9,7 @@
     android:padding="24dp">
 
     <TextView
+        android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="⚡ NextHome Energy"
@@ -29,9 +30,9 @@
         style="?attr/textInputOutlinedStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Email address">
+        android:hint="Meter number or email">
         <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etLoginEmail"
+            android:id="@+id/etLoginId"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textEmailAddress"
@@ -73,4 +74,15 @@
         android:layout_height="56dp"
         android:text="New here? Create an account"
         android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/tvServer"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:padding="12dp"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp" />
 </LinearLayout>

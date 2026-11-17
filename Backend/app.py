@@ -316,7 +316,10 @@ def solar_status(meter_number):
     """, (meter_number,)).fetchone()
     conn.close()
     if solar:
-        return jsonify(dict(solar)), 200
+        import insights   # imported here because insights is loaded after this file
+        data = dict(solar)
+        data["flow"] = insights.solar_flow(data["generation_kw"], data["load_kw"], data["battery_percent"])
+        return jsonify(data), 200
     return jsonify({"error": "No solar data"}), 404
 
 
@@ -545,7 +548,7 @@ accounts.init_account_tables()
 insights.init(billing_info, daily_kwh_series, accounts.phones_for_meter)
 app.register_blueprint(accounts.bp)
 app.register_blueprint(insights.bp)
-admin.init()
+admin.init(billing_info, daily_kwh_series)
 app.register_blueprint(admin.bp)
 
 

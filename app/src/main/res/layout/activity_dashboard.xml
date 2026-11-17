@@ -782,6 +782,62 @@
                         </LinearLayout>
 
                         <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="20dp"
+                            android:text="Where your power comes from"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="14sp" />
+
+                        <LinearLayout
+                            android:id="@+id/mixBar"
+                            android:layout_width="match_parent"
+                            android:layout_height="16dp"
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/bg_stat"
+                            android:orientation="horizontal"
+                            android:weightSum="100">
+
+                            <View
+                                android:id="@+id/mixSolar"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="0"
+                                android:background="#F5B301" />
+
+                            <View
+                                android:id="@+id/mixBattery"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="0"
+                                android:background="#34D399" />
+
+                            <View
+                                android:id="@+id/mixGrid"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="0"
+                                android:background="#A78BFA" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvMixLegend"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvMixNote"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:lineSpacingExtra="3dp"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+
+                        <TextView
                             android:id="@+id/tvSolarTip"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

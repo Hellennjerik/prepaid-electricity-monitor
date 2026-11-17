@@ -125,6 +125,42 @@ def planner(meter_number):
     }), 200
 
 
+# ---------------- solar and grid sharing ----------------
+
+BATTERY_RESERVE_PCT = 20.0     # a hybrid inverter keeps some charge in reserve and switches to the grid below it
+
+
+def solar_flow(generation_kw, load_kw, battery_percent):
+    """
+    Where the home's power comes from right now, using the usual hybrid-inverter priority:
+        1. solar first   2. battery next (above its reserve)   3. the Kenya Power grid for whatever is left
+    Only the grid part passes through the prepaid meter and costs money.
+    Spare solar (more than the home needs) charges the battery; if the battery is full it is not used.
+    """
+    generation_kw, load_kw = max(0.0, generation_kw or 0.0), max(0.0, load_kw or 0.0)
+    solar_kw = min(generation_kw, load_kw)
+    shortfall = load_kw - solar_kw
+    battery_kw = shortfall if (battery_percent or 0) > BATTERY_RESERVE_PCT else 0.0
+    grid_kw = shortfall - battery_kw
+    spare = max(0.0, generation_kw - load_kw)
+    pct = lambda kw: round(100.0 * kw / load_kw) if load_kw > 0 else 0  # noqa: E731
+    if load_kw <= 0:
+        mode, note = "idle", "Nothing is running right now."
+    elif grid_kw <= 0 and battery_kw <= 0:
+        mode, note = "solar", "Solar is covering the whole home. The grid is not being used."
+    elif grid_kw <= 0 and solar_kw <= 0:
+        mode, note = "battery", "Running on the battery. The grid is not being used."
+    elif grid_kw <= 0:
+        mode, note = "solar_battery", "Solar and the battery are covering the home. The grid is not being used."
+    elif solar_kw <= 0 and battery_kw <= 0:
+        mode, note = "grid", "The home is on Kenya Power. Battery is at its reserve and there is no sun."
+    else:
+        mode, note = "mixed", "Solar is not enough on its own, so Kenya Power covers the rest. Only that part uses your tokens."
+    return {"mode": mode, "note": note, "solar_kw": round(solar_kw, 2), "battery_kw": round(battery_kw, 2),
+            "grid_kw": round(grid_kw, 2), "spare_solar_kw": round(spare, 2),
+            "solar_pct": pct(solar_kw), "battery_pct": pct(battery_kw), "grid_pct": pct(grid_kw)}
+
+
 # ---------------- alerts ----------------
 
 def spike_info(series):
@@ -239,14 +275,16 @@ def alerts(meter_number):
 
 # ---------------- appliance catalogue for the tick-list ----------------
 
+# Appliances grouped by WHEN they normally run (this is what the tick-list shows):
 CATEGORY = {
-    "Always on": ["fridge_single", "fridge_double", "chest_freezer", "wifi_router", "cctv_system", "electric_fence"],
-    "TV and devices": ["pay_tv_decoder", "tv_32", "tv_65", "tv_85", "laptop", "phone_charger"],
-    "Lighting and cooling": ["led_lighting", "floodlight", "ceiling_fan"],
-    "Hot water": ["instant_shower", "water_boiler", "water_pump"],
-    "Kitchen": ["kettle", "electric_cooker", "pressure_cooker", "rice_cooker", "microwave", "toaster",
-                "blender", "air_fryer", "dishwasher"],
-    "Laundry": ["iron_box", "front_load_washer", "twin_tub_washer"],
+    "Runs all day": ["fridge_single", "fridge_double", "chest_freezer", "wifi_router", "cctv_system",
+                     "electric_fence"],
+    "Morning and evening": ["instant_shower", "water_boiler", "kettle", "toaster", "blender", "microwave",
+                            "water_pump", "pay_tv_decoder"],
+    "Evenings and night": ["led_lighting", "floodlight", "tv_32", "tv_65", "tv_85", "electric_cooker",
+                           "pressure_cooker", "air_fryer", "dishwasher", "phone_charger"],
+    "Daytime": ["laptop", "ceiling_fan", "rice_cooker"],
+    "Weekly chores": ["iron_box", "front_load_washer", "twin_tub_washer"],
 }
 TIPS = {
     "instant_shower": "Showers are one of the biggest bills. Shorter showers or a solar water heater cut this fast.",

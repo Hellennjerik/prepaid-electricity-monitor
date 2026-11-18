@@ -20,12 +20,14 @@ import notify
 bp = Blueprint("insights", __name__)
 
 LOW_HOURS, SPIKE_DAYS, SPIKE_PCT, COOLDOWN_HOURS, BASELINE_DAYS = 24.0, 3, 30.0, 12, 14
+LOAD_FACTOR, LOAD_MIN_EXTRA_KW = 2.0, 0.5     # "usage right now" alert: at least double the usual and 0.5 kW more
 
 _helpers = {}
 
 
-def init(billing_info, daily_kwh_series, phones_for_meter):
-    _helpers.update(billing_info=billing_info, daily_kwh_series=daily_kwh_series, phones=phones_for_meter)
+def init(billing_info, daily_kwh_series, phones_for_meter, advance=None):
+    _helpers.update(billing_info=billing_info, daily_kwh_series=daily_kwh_series, phones=phones_for_meter,
+                    advance=advance or (lambda meter_number: 0.0))
     conn = get_connection()
     conn.execute("CREATE TABLE IF NOT EXISTS alert_log (id INTEGER PRIMARY KEY AUTOINCREMENT, "
                  "meter_number TEXT NOT NULL, kind TEXT NOT NULL, message TEXT NOT NULL, "
@@ -176,6 +178,16 @@ def spike_info(series):
             "pct_change": round((recent_avg / base_avg - 1) * 100)}
 
 
+def load_alert(load_kw, usual_kw):
+    """Is the power being drawn right now well above this household's usual? Returns the alert details or None."""
+    if not usual_kw or usual_kw <= 0 or load_kw <= 0:
+        return None
+    if load_kw >= LOAD_FACTOR * usual_kw and load_kw - usual_kw >= LOAD_MIN_EXTRA_KW:
+        return {"load_kw": round(load_kw, 2), "usual_kw": round(usual_kw, 2),
+                "pct_change": round((load_kw / usual_kw - 1) * 100)}
+    return None
+
+
 def current_alerts(conn, meter_number):
     meter = conn.execute("SELECT balance FROM meters WHERE meter_number = ?", (meter_number,)).fetchone()
     if not meter:
@@ -189,6 +201,13 @@ def current_alerts(conn, meter_number):
             out.append({"kind": "low_credit", "level": "warning", "hours_left": round(hours, 1),
                         "message": f"Your credit may run out in about {hours:.0f} hours "
                                    f"(KSh {meter['balance']:.0f} left). Top up soon."})
+    row = conn.execute("SELECT load_w FROM meters WHERE meter_number = ?", (meter_number,)).fetchone()
+    if info["avg_daily_kwh"] and row and row["load_w"]:
+        la = load_alert(row["load_w"] / 1000.0, info["avg_daily_kwh"] / 24.0)
+        if la:
+            out.append({"kind": "load_high", "level": "info", **la,
+                        "message": f"You are using {la['load_kw']} kW right now, {la['pct_change']}% more than your usual "
+                                   f"{la['usual_kw']} kW. Check for appliances left on."})
     sp = spike_info(series)
     if sp and sp["pct_change"] >= SPIKE_PCT:
         out.append({"kind": "spike", "level": "info", **sp,
@@ -252,6 +271,7 @@ def check_and_notify(meter_number):
 @bp.route("/alerts/<meter_number>", methods=["GET"])
 def alerts(meter_number):
     """What the app shows in its alert banner right now, plus the last 10 alerts that were sent."""
+    _helpers["advance"](meter_number)
     conn = get_connection()
     try:
         now = current_alerts(conn, meter_number)

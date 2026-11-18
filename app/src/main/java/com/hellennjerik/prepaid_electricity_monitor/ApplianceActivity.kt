@@ -28,6 +28,10 @@ class ApplianceActivity : AppCompatActivity() {
         setupBottomNav(R.id.nav_appliances)
         findViewById<TextView>(R.id.tvApplMeter).text = "Meter $meter"
 
+        // The simulated appliance switches go at the very bottom, below the checklist and the analysis.
+        val content = findViewById<ScrollView>(R.id.scrollAppliances).getChildAt(0) as? LinearLayout
+        content?.addView(appliancePanel().apply { setPadding(dp(16), dp(8), dp(16), dp(96)) })
+
         val btnSave = findViewById<Button>(R.id.btnSaveAppliances)
         btnSave.setOnClickListener {
             val chosen = catalog.filter { boxes[it.key]?.isChecked == true }
@@ -63,6 +67,62 @@ class ApplianceActivity : AppCompatActivity() {
                 toast("Cannot reach the server. Check your connection.")
             }
         }
+    }
+
+    /** Simulated home: switch appliances on and off and watch the meter react (units fall, usage spikes, alert fires). */
+    private fun appliancePanel(): View {
+        val items = listOf(
+            "Kettle" to 2000, "Iron" to 1000, "Microwave" to 1200,
+            "Heater" to 3000, "Instant shower" to 5000
+        )
+        val switches = linkedMapOf<String, Pair<Int, androidx.appcompat.widget.SwitchCompat>>()
+        val total = TextView(this).apply {
+            textSize = 14f
+            setTextColor(Color.parseColor("#F5B301"))
+            setPadding(0, dp(6), 0, dp(4))
+        }
+        fun refresh() {
+            val watts = switches.values.filter { it.second.isChecked }.sumOf { it.first }
+            total.text = "Switched on now: $watts W"
+            lifecycleScope.launch {
+                try {
+                    val r = ApiClient.api.homeHeater(meter, if (watts > 0) "on" else "off", watts)
+                    if (!r.isSuccessful) toast("Could not reach the simulated home")
+                } catch (e: Exception) {
+                    toast("Cannot reach the server. Check your connection.")
+                }
+            }
+        }
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(8), 0, dp(12))
+        }
+        box.addView(TextView(this).apply {
+            text = "APPLIANCES IN USE (SIMULATED)"
+            textSize = 12f
+            setTextColor(Color.parseColor("#94A3B8"))
+            letterSpacing = 0.08f
+        })
+        box.addView(TextView(this).apply {
+            text = "Switch appliances on and off, as people at home would. The meter sees the extra power: your units fall faster and a usage alert appears on the Home tab."
+            textSize = 14f
+            setTextColor(resources.getColor(R.color.text_primary, theme))
+            setPadding(0, dp(4), 0, dp(4))
+        })
+        for ((name, watts) in items) {
+            val sw = androidx.appcompat.widget.SwitchCompat(this).apply {
+                text = "$name  ·  $watts W"
+                textSize = 16f
+                minHeight = dp(48)
+                setTextColor(resources.getColor(R.color.text_primary, theme))
+                setOnCheckedChangeListener { _, _ -> refresh() }
+            }
+            switches[name] = watts to sw
+            box.addView(sw)
+        }
+        total.text = "Switched on now: 0 W"
+        box.addView(total)
+        return box
     }
 
     private fun buildChecklist() {

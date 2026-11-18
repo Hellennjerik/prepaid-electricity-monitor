@@ -1,5 +1,6 @@
 package com.hellennjerik.prepaid_electricity_monitor
 
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -41,6 +42,14 @@ interface ApiService {
 
     @GET("predict/{meter_number}")
     suspend fun getPrediction(@Path("meter_number") meterNumber: String): Response<PredictionResponse>
+
+    // ---- demo: the simulated home (action is "on" or "off") ----
+    @POST("home_heater/{meter_number}/{action}")
+    suspend fun homeHeater(
+        @Path("meter_number") meterNumber: String,
+        @Path("action") action: String,
+        @Query("watts") watts: Int
+    ): Response<ResponseBody>
 
     // ---- appliances ----
     @GET("appliance_catalog")

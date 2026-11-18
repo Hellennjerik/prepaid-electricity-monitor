@@ -32,7 +32,7 @@ import accounts
 
 bp = Blueprint("admin", __name__)
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.5.0"
 STARTED = time.time()
 COOKIE = "nh_admin"
 _sessions = {}            # admin session tokens -> expiry time (kept in memory; a restart signs the admin out)
@@ -48,6 +48,7 @@ SOLAR_SCENARIOS = {
     "evening": ("Evening, on battery",       0.0, 1.5, 45.0),
     "night":   ("Night, battery low",        0.0, 1.1, 15.0),
     "heavy":   ("Heavy load, weak sun",      0.6, 2.4, 12.0),
+    "live":    ("Run live (follow the real sun)", 0.0, 0.0, 0.0),
 }
 
 
@@ -328,6 +329,7 @@ def _context():
                 version=APP_VERSION, uptime=f"{up // 3600}h {(up % 3600) // 60}m",
                 all_ok=all(h["ok"] for h in health), scenarios=SOLAR_SCENARIOS,
                 solar_meters=[m["number"] for m in meters if m["solar"]] or ["M001"],
+                all_meters=[m["number"] for m in meters],
                 admin=admin_email())
 
 
@@ -408,6 +410,20 @@ def resolve_feedback(note_id):
     return redirect("/admin#feedback")
 
 
+@bp.route("/admin/load/<action>", methods=["POST"])
+def load_demo(action):
+    """Demo panel: switch a heavy appliance on or off on the simulated meter, so usage visibly goes up or down."""
+    if not _signed_in():
+        return redirect("/admin/login")
+    meter = (request.form.get("meter") or "M001").strip().upper()
+    if action not in ("on", "off"):
+        return jsonify({"error": "Unknown action"}), 404
+    watts = 3000.0 if action == "on" else 0.0
+    until = time.time() + 15 * 60 if action == "on" else None      # a switched-on heater stays on for 15 minutes
+    _post_action("UPDATE meters SET boost_w = ?, boost_until = ? WHERE meter_number = ?", watts, until, meter)
+    return redirect("/admin#system")
+
+
 @bp.route("/admin/solar/<scenario>", methods=["POST"])
 def solar_scenario(scenario):
     """Demo panel: set a meter's solar state to a ready-made situation so the app shows solar / battery / grid switching."""
@@ -421,6 +437,11 @@ def solar_scenario(scenario):
     try:
         if not conn.execute("SELECT 1 FROM meters WHERE meter_number = ?", (meter,)).fetchone():
             return redirect("/admin#system")
+        if scenario == "live":              # let the built-in solar simulation take over again
+            conn.execute("UPDATE meters SET sol_hold_until = NULL, sol_ext_at = NULL WHERE meter_number = ?", (meter,))
+            conn.commit()
+            return redirect("/admin#system")
+        conn.execute("UPDATE meters SET sol_hold_until = ? WHERE meter_number = ?", (time.time() + 600, meter))   # hold the scenario for 10 minutes
         existing = conn.execute("SELECT id, solar_kwh_today FROM solar_state WHERE meter_number = ? ORDER BY id DESC LIMIT 1",
                                 (meter,)).fetchone()
         if existing:
@@ -560,9 +581,17 @@ DASH_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta 
  {% for h in health %}<tr><td class="{{ 'ok' if h.ok else 'bad' }}">{{ 'PASS' if h.ok else 'FAIL' }}</td><td>{{ h.label }}</td><td style="color:var(--muted)">{{ h.detail }}</td></tr>{% endfor %}
  <tr><td class="ok">INFO</td><td>Version</td><td style="color:var(--muted)">{{ version }} (up {{ uptime }})</td></tr>
  </table></section>
+ <section><h2>Simulated meter demo panel</h2>
+ <p class="note">The meter is simulated inside the server, so the balance keeps falling by itself. Switch on a 3 kW heater (15 minutes) to make usage jump,
+ then open the app: the alert "You are using ... kW right now" appears. Switch it off to bring usage back down.</p>
+ <form method="post" class="scen">
+  <select name="meter" style="width:auto">{% for s in all_meters %}<option>{{ s }}</option>{% endfor %}</select>
+  <button type="submit" formaction="/admin/load/on">Switch on heater (+3 kW)</button>
+  <button type="submit" formaction="/admin/load/off">Switch it off</button>
+ </form></section>
  <section><h2>Solar demo panel</h2>
- <p class="note">Sets a solar home to a ready-made situation. Open the app on that meter and watch the "Where your power comes from" bar change within a few seconds:
- solar first, then the battery, and the Kenya Power grid only when both fall short.</p>
+ <p class="note">Sets a solar home to a ready-made situation for 10 minutes. Open the app (or the page /solar/M001) and watch the "Where your power comes from" bar change within a few seconds:
+ solar first, then the battery, and the Kenya Power grid only when both fall short. "Run live" lets the simulated sun and battery take over again.</p>
  <form method="post" class="scen" id="scenform">
   <select name="meter" style="width:auto">{% for s in solar_meters %}<option>{{ s }}</option>{% endfor %}</select>
   {% for key, s in scenarios.items() %}<button type="submit" formaction="/admin/solar/{{ key }}">{{ s[0] }}</button>{% endfor %}

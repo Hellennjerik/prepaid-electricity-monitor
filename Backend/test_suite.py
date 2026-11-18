@@ -58,6 +58,7 @@ def unit_tests():
     check_eq("UT-15", "Unit", "Alert level 'abc' is rejected", True, parse_threshold("abc")[1] is not None)
     check_eq("UT-16", "Unit", "Meter number 'm001' is cleaned to M001", "M001", clean_meter(" m001 "))
     check_eq("UT-17", "Unit", "Meter number with symbols 'M-01!' is rejected", None, clean_meter("M-01!"))
+
     check_eq("UT-18", "Unit", "Non-numeric history answer 'abc' is rejected", False, number({"x": "abc"}, "x"))
 
     f = solar_flow(1.4, 0.4, 72)
@@ -71,6 +72,27 @@ def unit_tests():
     f = solar_flow(2.0, 0.5, 50)
     check_eq("UT-23", "Unit", "Spare solar is reported (1.5 kW) and grid is 0", (1.5, 0.0), (f["spare_solar_kw"], f["grid_kw"]))
     check_eq("UT-24", "Unit", "No load gives mode 'idle'", "idle", solar_flow(1.0, 0.0, 50)["mode"])
+
+    from insights import load_alert
+    import datetime as _dt
+    check_eq("UT-27", "Unit", "Load 3.9 kW against a usual 1.0 kW raises a load alert", True, load_alert(3.9, 1.0) is not None)
+    check_eq("UT-28", "Unit", "Load 1.4 kW against a usual 1.0 kW does not (not double)", None, load_alert(1.4, 1.0))
+    check_eq("UT-29", "Unit", "A small meter (0.1 kW usual, 0.25 kW now) does not alert (under 0.5 kW extra)", None, load_alert(0.25, 0.1))
+
+    import solar_model as sm
+    check_eq("UT-30", "Unit", "The sun gives no power at 02:00 and more than 90% of peak at 12:30", (0.0, True),
+             (sm.sun_factor(2.0), sm.sun_factor(12.5) > 0.9))
+    r = sm.solar_tick(0.0, 1.0, 2.5, 1.0)
+    check_eq("UT-31", "Unit", "At night the battery covers a 1 kW load for an hour (2.5 to 1.5 kWh, grid 0)", (1.5, 0.0),
+             (round(r["battery_kwh"], 2), round(r["grid_kw"], 2)))
+    r = sm.solar_tick(0.0, 1.0, 1.0, 1.0)
+    check_eq("UT-32", "Unit", "At the 20% reserve (1.0 kWh) the battery is not used and the grid supplies 1 kW", (1.0, 1.0),
+             (round(r["battery_kwh"], 2), round(r["grid_kw"], 2)))
+    r = sm.solar_tick(2.0, 0.5, 2.5, 1.0)
+    check_eq("UT-33", "Unit", "Spare sun charges the battery (2.5 to 4.0 kWh) and the grid is not used", (4.0, 0.0),
+             (round(r["battery_kwh"], 2), round(r["grid_kw"], 2)))
+    r = sm.solar_tick(2.0, 0.5, 4.9, 1.0)
+    check_eq("UT-34", "Unit", "A nearly full battery stops at 5.0 kWh", 5.0, round(r["battery_kwh"], 2))
 
     today = datetime.date.today()
     usual = [((today - datetime.timedelta(days=30 - i)).isoformat(), 3.0) for i in range(27)]
@@ -242,6 +264,69 @@ def blackbox_tests():
                  bool(stored) and payload["password"] not in stored[0] and len(stored[0]) > 30)
     except Exception as e:  # noqa: BLE001
         record("BB-38", "Black box", "Password is stored as a hash, not as text", "hash", repr(e), False)
+
+    # built-in simulated meter and the "usage right now" alert
+    try:
+        before = requests.get(f"{API}/meter_status/M002", timeout=15).json()
+        time.sleep(8)
+        after = requests.get(f"{API}/meter_status/M002", timeout=15).json()
+        check_eq("BB-39", "Black box", "The simulated meter keeps running: kWh used rises between two reads", True,
+                 after["kwh_used"] > before["kwh_used"])
+        check_eq("BB-40", "Black box", "The balance never rises by itself (it falls or stays)", True,
+                 after["balance"] <= before["balance"])
+        adm.post(f"{API}/admin/load/on", data={"meter": "M002"}, timeout=10)
+        time.sleep(3.5)
+        requests.get(f"{API}/meter_status/M002", timeout=15)
+        time.sleep(3.5)
+        on = requests.get(f"{API}/meter_status/M002", timeout=15).json()
+        al = requests.get(f"{API}/alerts/M002", timeout=15).json()
+        kinds = [a["kind"] for a in al.get("active", [])]
+        check_eq("BB-41", "Black box", "Switching on a 3 kW heater raises the load above 3000 W", True, on["load_w"] >= 3000)
+        check_eq("BB-42", "Black box", "Usage far above normal creates a 'load_high' alert", True, "load_high" in kinds)
+        adm.post(f"{API}/admin/load/off", data={"meter": "M002"}, timeout=10)
+        time.sleep(3.5)
+        requests.get(f"{API}/meter_status/M002", timeout=15)
+        time.sleep(3.5)
+        off = requests.get(f"{API}/meter_status/M002", timeout=15).json()
+        al = requests.get(f"{API}/alerts/M002", timeout=15).json()
+        kinds = [a["kind"] for a in al.get("active", [])]
+        check_eq("BB-43", "Black box", "Switching the heater off brings the load back down and clears the alert", True,
+                 off["load_w"] < 3000 and "load_high" not in kinds)
+    except Exception as e:  # noqa: BLE001
+        for tid in ("BB-39", "BB-40", "BB-41", "BB-42", "BB-43"):
+            if not any(r[0] == tid for r in RESULTS):
+                record(tid, "Black box", "Simulated meter test", "runs", repr(e), False)
+
+    r = requests.get(f"{API}/meter/M002", timeout=10)
+    check_eq("BB-44", "Black box", "The web meter screen /meter/M002 opens and shows the meter display", True,
+             r.status_code == 200 and "PREPAID METER" in r.text and "M002" in r.text)
+    ms = requests.get(f"{API}/meter_status/M002", timeout=10).json()
+    check_eq("BB-49", "Black box", "Meter status gives units left (credit in kWh) and the last charge, as a real meter display does", True,
+             "units_left" in ms and "last_charge_ksh" in ms and ms["units_left"] >= 0)
+    hr = requests.post(f"{API}/home_heater/M002/on", timeout=10)
+    time.sleep(3.5)
+    requests.get(f"{API}/meter_status/M002", timeout=15)
+    time.sleep(3.5)
+    ld = requests.get(f"{API}/meter_status/M002", timeout=15).json().get("load_w", 0)
+    requests.post(f"{API}/home_heater/M002/off", timeout=10)
+    check_eq("BB-50", "Black box", "The household can switch the heater on from the home page /home/M002 and the load rises (no admin login needed)", True,
+             hr.status_code == 200 and ld >= 3000)
+    r = requests.get(f"{API}/meter/M002%3Cscript%3E", timeout=10)
+    check_eq("BB-45", "Black box", "The web meter screen does not echo unsafe characters in the meter number", False,
+             "<script>" in r.text.split("<body>")[1].split("<script>")[0] or "M002<script>" in r.text)
+
+    r = requests.get(f"{API}/solar/M001", timeout=10)
+    check_eq("BB-46", "Black box", "The web solar screen /solar/M001 opens and shows the solar display", True,
+             r.status_code == 200 and "SOLAR SYSTEM" in r.text and "M001" in r.text)
+    try:
+        s1 = requests.get(f"{API}/solar_status/M001", timeout=15).json()
+        ok = (0 <= s1["battery_percent"] <= 100 and s1["generation_kw"] >= 0 and "flow" in s1
+              and abs(s1["flow"]["solar_pct"] + s1["flow"]["battery_pct"] + s1["flow"]["grid_pct"] - 100) <= 2)
+        check_eq("BB-47", "Black box", "Simulated solar status is valid: battery 0 to 100%, the three source shares add up to 100%", True, ok)
+    except Exception as e:  # noqa: BLE001
+        record("BB-47", "Black box", "Simulated solar status is valid", "valid", repr(e), False)
+    r = requests.get(f"{API}/solar_status/M999", timeout=10)
+    check_eq("BB-48", "Black box", "Solar status for a meter without solar answers 404", 404, r.status_code)
 
     # performance (non-functional)
     perf = {}
